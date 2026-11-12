@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Budget Tracker</title>
+  <script>
+    (function () {
+      try { document.documentElement.setAttribute('data-theme', localStorage.getItem('bt_theme') || 'light'); } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div id="appShell" class="app-shell">
+
+  <nav class="navbar">
+    <div class="nav-brand">BudgetTracker</div>
+    <ul class="nav-links">
+      <li><a href="#" class="nav-tab active" data-tab="page-dashboard">Dashboard</a></li>
+      <li><a href="#" class="nav-tab" data-tab="page-transactions">Transactions</a></li>
+      <li><a href="#" class="nav-tab" data-tab="page-summary">Summary</a></li>
+    </ul>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode">&#x1F319;</button>
+  </nav>
+
+  <!-- PAGE: DASHBOARD -->
+  <div id="page-dashboard" class="page active">
+    <main class="container">
+      <div class="budget-warning" id="budgetWarning" style="display:none;"></div>
+      <section class="cards-section">
+        <div class="card card-income"><div class="card-icon">&#x1F4C8;</div><div class="card-info"><span class="card-label">Total Income</span><span class="card-amount" id="totalIncome">Rp0</span></div></div>
+        <div class="card card-expense"><div class="card-icon">&#x1F4C9;</div><div class="card-info"><span class="card-label">Total Expenses</span><span class="card-amount" id="totalExpense">Rp0</span></div></div>
+        <div class="card card-balance"><div class="card-icon">&#x1F4BC;</div><div class="card-info"><span class="card-label">Balance</span><span class="card-amount" id="totalBalance">Rp0</span></div></div>
+      </section>
+      <section class="charts-section">
+        <div class="chart-box"><h3 class="chart-title">Expenses by Category</h3><div id="donutChartContainer"></div></div>
+        <div class="chart-box"><h3 class="chart-title">Monthly Income vs Expenses</h3><div id="barChartContainer"></div></div>
+      </section>
+      <div class="dashboard-grid">
+        <section class="form-section card-box"><h2>Add Transaction</h2>
+          <form id="transactionForm" novalidate>
+            <div class="form-row">
+              <label class="radio-label"><input type="radio" name="txType" value="income" id="typeIncome" /><span class="radio-custom income-radio">Income</span></label>
+              <label class="radio-label"><input type="radio" name="txType" value="expense" id="typeExpense" checked /><span class="radio-custom expense-radio">Expense</span></label>
+            </div>
+            <div class="form-group"><label for="txAmount">Amount *</label><input type="number" id="txAmount" placeholder="0" min="1" step="1" required /></div>
+            <div class="form-group"><label for="txDate">Date *</label><input type="date" id="txDate" required /></div>
+            <div class="form-group"><label for="txCategory">Category *</label><select id="txCategory" required></select></div>
+            <div class="form-group"><label for="txDescription">Description *</label><input type="text" id="txDescription" placeholder="e.g. Belanja mingguan" required /></div>
+            <div class="form-group"><label for="txNotes">Notes</label><textarea id="txNotes" rows="2" placeholder="Catatan opsional..."></textarea></div>
+            <div class="form-group"><label for="txPayment">Payment Method</label><select id="txPayment"><option value="Cash">Cash</option><option value="Credit Card">Credit Card</option><option value="Debit Card">Debit Card</option><option value="Transfer">Transfer</option></select></div>
+            <button type="submit" class="btn btn-primary">Add Transaction</button>
+          </form></section>
+        <div class="right-column">
+          <section class="budget-section card-box"><h2>Budget Settings</h2>
+            <div class="form-group"><label for="overallBudget">Monthly Overall Limit (Rp)</label><div class="input-row"><input type="number" id="overallBudget" placeholder="e.g. 3000000" min="0" step="1000" /><button class="btn btn-secondary" id="saveOverallBudget">Save</button></div></div>
+            <div id="categoryBudgets"></div></section>
+          <section class="category-section card-box"><h2>Manage Categories</h2>
+            <div class="input-row"><input type="text" id="newCategoryInput" placeholder="New category name" /><button class="btn btn-secondary" id="addCategoryBtn">Add</button></div>
+            <ul class="category-list" id="categoryList"></ul></section>
+        </div>
+      </div>
+      <section class="recent-section card-box"><h2>Recent Transactions</h2>
+        <div class="table-wrapper"><table class="tx-table"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Payment</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="recentTransactionsBody"><tr class="empty-row"><td colspan="6">No transactions yet. Add one above!</td></tr></tbody></table></div>
+      </section>
+    </main></div>
+
+  <!-- PAGE: TRANSACTIONS -->
+  <div id="page-transactions" class="page"><main class="container">
+    <h1 class="page-title">All Transactions</h1>
+    <section class="controls-section card-box"><div class="controls-row">
+      <div class="form-group"><label for="filterType">Type</label><select id="filterType"><option value="all">All</option><option value="income">Income</option><option value="expense">Expense</option></select></div>
+      <div class="form-group"><label for="filterCategory">Category</label><select id="filterCategory"><option value="all">All Categories</option></select></div>
+      <div class="form-group"><label for="filterMonth">Month</label><input type="month" id="filterMonth" /></div>
+      <div class="form-group"><label for="sortBy">Sort By</label><select id="sortBy"><option value="date-desc">Date (Newest)</option><option value="date-asc">Date (Oldest)</option><option value="amount-desc">Amount (High to Low)</option><option value="amount-asc">Amount (Low to High)</option><option value="category-asc">Category (A to Z)</option></select></div>
+      <button class="btn btn-secondary" id="clearFilters">Clear Filters</button>
+    </div></section>
+    <section class="card-box"><div class="table-wrapper"><table class="tx-table"><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Category</th><th>Payment</th><th>Notes</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="allTransactionsBody"><tr class="empty-row"><td colspan="8">No transactions found.</td></tr></tbody></table></div></section>
+  </main></div>
+
+  <!-- PAGE: SUMMARY -->
+  <div id="page-summary" class="page"><main class="container">
+    <h1 class="page-title">Monthly Summary</h1>
+    <section class="month-nav card-box"><button class="btn btn-secondary" id="prevMonth" aria-label="Previous month">&#8592; Prev</button><span class="month-label" id="currentMonthLabel"></span><button class="btn btn-secondary" id="nextMonth" aria-label="Next month">Next &#8594;</button></section>
+    <section class="cards-section">
+      <div class="card card-income"><div class="card-icon">&#x1F4C8;</div><div class="card-info"><span class="card-label">Month Income</span><span class="card-amount" id="summaryIncome">Rp0</span></div></div>
+      <div class="card card-expense"><div class="card-icon">&#x1F4C9;</div><div class="card-info"><span class="card-label">Month Expenses</span><span class="card-amount" id="summaryExpense">Rp0</span></div></div>
+      <div class="card card-balance"><div class="card-icon">&#x1F4BC;</div><div class="card-info"><span class="card-label">Month Balance</span><span class="card-amount" id="summaryBalance">Rp0</span></div></div>
+    </section>
+    <div class="summary-grid">
+      <section class="card-box"><h2>Expense Breakdown by Category</h2><div class="table-wrapper"><table class="tx-table"><thead><tr><th>Category</th><th>Transactions</th><th>Total Spent</th><th>Budget Limit</th><th>Status</th></tr></thead><tbody id="summaryTableBody"><tr class="empty-row"><td colspan="5">No expense data for this month.</td></tr></tbody></table></div></section>
+      <section class="card-box"><h2>Spending Distribution</h2><div id="summaryDonutContainer"></div></section>
+    </div>
+    <section class="card-box"><h2>Budget Progress</h2><div id="budgetProgressBars"></div></section>
+  </main></div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" style="display:none;">
+    <div class="modal-box"><div class="modal-header"><h2 id="editModalTitle">Edit Transaction</h2><button class="modal-close" id="closeEditModal" aria-label="Close">&#x2715;</button></div>
+    <form id="editTransactionForm" novalidate>
+      <input type="hidden" id="editTxId" />
+      <div class="form-row"><label class="radio-label"><input type="radio" name="editTxType" value="income" id="editTypeIncome" /><span class="radio-custom income-radio">Income</span></label><label class="radio-label"><input type="radio" name="editTxType" value="expense" id="editTypeExpense" /><span class="radio-custom expense-radio">Expense</span></label></div>
+      <div class="form-group"><label for="editTxAmount">Amount *</label><input type="number" id="editTxAmount" min="1" step="1" required /></div>
+      <div class="form-group"><label for="editTxDate">Date *</label><input type="date" id="editTxDate" required /></div>
+      <div class="form-group"><label for="editTxCategory">Category *</label><select id="editTxCategory" required></select></div>
+      <div class="form-group"><label for="editTxDescription">Description *</label><input type="text" id="editTxDescription" required /></div>
+      <div class="form-group"><label for="editTxNotes">Notes</label><textarea id="editTxNotes" rows="2"></textarea></div>
+      <div class="form-group"><label for="editTxPayment">Payment Method</label><select id="editTxPayment"><option value="Cash">Cash</option><option value="Credit Card">Credit Card</option><option value="Debit Card">Debit Card</option><option value="Transfer">Transfer</option></select></div>
+      <div class="modal-actions"><button type="button" class="btn btn-secondary" id="cancelEditModal">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div>
+    </form></div></div>
+
+  <footer class="footer"><p>BudgetTracker &copy; 2024 &mdash; RevoU Coding Camp Final Project</p></footer>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>
